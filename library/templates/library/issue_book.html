@@ -1,0 +1,124 @@
+{% extends 'library/base.html' %}
+{% load static %}
+
+{% block title %}Issue Book • LibreFlow{% endblock %}
+
+{% block content %}
+<div class="container-xl py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header Card -->
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <div>
+                    <h2 class="fw-bold text-dark mb-1">
+                        <i class="bi bi-journal-arrow-up text-primary me-2"></i> Book Issue Workflow
+                    </h2>
+                    <p class="text-muted mb-0">
+                        Check out a library book to an active member with automatic 14-day circulation tracking.
+                    </p>
+                </div>
+                <a href="{% url 'book_catalog' %}" class="btn btn-outline-custom btn-sm">
+                    <i class="bi bi-x-lg me-1"></i> Cancel
+                </a>
+            </div>
+
+            <!-- Main Form Card -->
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-body p-4 p-md-5">
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger d-flex align-items-center gap-2 mb-4">
+                        <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                        <div>{{ form.non_field_errors }}</div>
+                    </div>
+                    {% endif %}
+
+                    <form method="post" id="issueBookForm" novalidate>
+                        {% csrf_token %}
+
+                        <!-- Member Selection -->
+                        <div class="mb-4">
+                            <label for="issueMemberSelect" class="form-label fw-bold text-dark">
+                                <i class="bi bi-person-fill text-primary me-1"></i> Select Member <span class="text-danger">*</span>
+                            </label>
+                            {{ form.member }}
+                            {% if form.member.errors %}
+                            <div class="text-danger small mt-1">{{ form.member.errors }}</div>
+                            {% endif %}
+                            <div class="form-text d-flex justify-content-between">
+                                <span>Choose the registered member borrowing this book.</span>
+                                <a href="{% url 'add_member' %}" class="text-primary text-decoration-none fw-semibold">
+                                    + Register New Member
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Book Selection -->
+                        <div class="mb-4">
+                            <label for="issueBookSelect" class="form-label fw-bold text-dark">
+                                <i class="bi bi-book-half text-primary me-1"></i> Select Book <span class="text-danger">*</span>
+                            </label>
+                            {{ form.book }}
+                            {% if form.book.errors %}
+                            <div class="text-danger small mt-1">{{ form.book.errors }}</div>
+                            {% endif %}
+                            <div class="form-text d-flex justify-content-between">
+                                <span>Only books with available copies (> 0) can be issued.</span>
+                                <a href="{% url 'add_book' %}" class="text-primary text-decoration-none fw-semibold">
+                                    + Add New Book
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Dates Row with Dynamic Due Date Calculator -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="issueDateInput" class="form-label fw-bold text-dark">
+                                    <i class="bi bi-calendar-event text-primary me-1"></i> Issue Date <span class="text-danger">*</span>
+                                </label>
+                                {{ form.issue_date }}
+                                {% if form.issue_date.errors %}
+                                <div class="text-danger small mt-1">{{ form.issue_date.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">Defaults to today's date.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="dueDateInput" class="form-label fw-bold text-dark">
+                                    <i class="bi bi-calendar-check text-primary me-1"></i> Due Date (14 Days) <span class="text-danger">*</span>
+                                </label>
+                                {{ form.due_date }}
+                                {% if form.due_date.errors %}
+                                <div class="text-danger small mt-1">{{ form.due_date.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">Calculated automatically as 14 days from issue date.</div>
+                            </div>
+                        </div>
+
+                        <!-- Live Circulation Summary Banner -->
+                        <div class="p-3 bg-light rounded-3 border mb-4 d-flex align-items-center gap-3">
+                            <div class="stat-icon-wrap bg-primary-subtle text-primary">
+                                <i class="bi bi-info-circle-fill"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold text-dark">Circulation Policy Notice</div>
+                                <div class="small text-muted">
+                                    Standard circulation duration is <strong>14 days</strong>. Fines accrue at <strong>$1.00 per day</strong> if not returned by the due date.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex align-items-center justify-content-end gap-2">
+                            <a href="{% url 'book_catalog' %}" class="btn btn-outline-custom px-4">
+                                Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary-gradient px-4 py-2">
+                                <i class="bi bi-check-circle me-1"></i> Confirm & Issue Book
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

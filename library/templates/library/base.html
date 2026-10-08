@@ -1,0 +1,142 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Digital Library & E-Book Circulation Portal - Browse catalog, issue/return books, track due dates and overdue fines.">
+    <title>{% block title %}Digital Library & E-Book Circulation Portal{% endblock %}</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Custom Design System CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <!-- Navigation Header -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
+        <div class="container-xl">
+            <a class="navbar-brand" href="{% url 'book_catalog' %}">
+                <span class="brand-icon">
+                    <i class="bi bi-book-half"></i>
+                </span>
+                <span>LibreFlow <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-1 fs-6 fw-normal">Portal</span></span>
+            </a>
+
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMain" aria-controls="navMain" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navMain">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3 gap-1">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'book_catalog' %}active{% endif %}" href="{% url 'book_catalog' %}">
+                            <i class="bi bi-grid me-1"></i> Catalog
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'issue_book' %}active{% endif %}" href="{% url 'issue_book' %}">
+                            <i class="bi bi-journal-arrow-up me-1"></i> Issue Book
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'member_dashboard' or request.resolver_match.url_name == 'members' %}active{% endif %}" href="{% url 'members' %}">
+                            <i class="bi bi-person-badge me-1"></i> Member Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'calculator' %}active{% endif %}" href="{% url 'calculator' %}">
+                            <i class="bi bi-calculator me-1"></i> Due & Fine Calculator
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="d-flex align-items-center gap-2 mt-3 mt-lg-0">
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-light dropdown-toggle rounded-pill px-3 py-1" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-plus-circle me-1"></i> Manage
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                            <li><a class="dropdown-item py-2" href="{% url 'add_book' %}"><i class="bi bi-journal-plus me-2 text-primary"></i>Add New Book</a></li>
+                            <li><a class="dropdown-item py-2" href="{% url 'add_member' %}"><i class="bi bi-person-plus me-2 text-success"></i>Register Member</a></li>
+                            <li><a class="dropdown-item py-2" href="{% url 'add_author' %}"><i class="bi bi-feather me-2 text-info"></i>Add Author</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item py-2" href="{% url 'member_list' %}"><i class="bi bi-people me-2 text-secondary"></i>Members Directory</a></li>
+                        </ul>
+                    </div>
+
+                    <a href="/admin/" class="btn btn-sm btn-outline-light rounded-pill px-3 py-1" target="_blank" title="Django Admin">
+                        <i class="bi bi-shield-lock me-1"></i> Admin
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Global Messages / Alerts -->
+    {% if messages %}
+    <div class="container-xl mt-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show shadow-sm border-0 d-flex align-items-center gap-2" role="alert">
+            {% if message.tags == 'success' %}
+                <i class="bi bi-check-circle-fill fs-5 text-success"></i>
+            {% elif message.tags == 'error' or message.tags == 'danger' %}
+                <i class="bi bi-x-circle-fill fs-5 text-danger"></i>
+            {% elif message.tags == 'warning' %}
+                <i class="bi bi-exclamation-triangle-fill fs-5 text-warning"></i>
+            {% else %}
+                <i class="bi bi-info-circle-fill fs-5 text-primary"></i>
+            {% endif %}
+            <div class="flex-grow-1">{{ message }}</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Main Content Area -->
+    <main class="flex-grow-1">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer-custom">
+        <div class="container-xl">
+            <div class="row g-4 align-items-center">
+                <div class="col-md-6 text-center text-md-start">
+                    <h6 class="text-white fw-bold mb-1">
+                        <i class="bi bi-book-half text-primary me-1"></i> LibreFlow Digital Library
+                    </h6>
+                    <p class="small text-muted mb-0">
+                        Capstone Project 3 • Django ORM & SQLite Circulation Portal • Ready for Render Deployment
+                    </p>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <div class="d-flex justify-content-center justify-content-md-end gap-3 small">
+                        <a href="{% url 'book_catalog' %}">Catalog</a>
+                        <span class="text-secondary">•</span>
+                        <a href="{% url 'calculator' %}">Fine Calculator</a>
+                        <span class="text-secondary">•</span>
+                        <a href="{% url 'members' %}">Dashboard</a>
+                        <span class="text-secondary">•</span>
+                        <a href="/admin/">Django Admin</a>
+                    </div>
+                    <div class="text-muted small mt-1">
+                        Built with Django 6.1 • Bootstrap 5 • SQLite ORM
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <!-- Custom Interactive JS -->
+    <script src="{% static 'js/app.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

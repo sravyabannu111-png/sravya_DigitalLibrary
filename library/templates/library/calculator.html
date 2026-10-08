@@ -1,0 +1,164 @@
+{% extends 'library/base.html' %}
+{% load static %}
+
+{% block title %}Interactive Due-Date & Fine Calculator • LibreFlow{% endblock %}
+
+{% block content %}
+<div class="container-xl py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <!-- Header -->
+            <div class="text-center mb-5">
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill mb-2">
+                    <i class="bi bi-cpu me-1"></i> Interactive Circulation Engine
+                </span>
+                <h1 class="display-6 fw-bold text-dark mb-2">
+                    Due-Date & Overdue Fine Calculator
+                </h1>
+                <p class="lead text-muted mx-auto" style="max-width: 600px;">
+                    Simulate borrowing periods, compute exact 14-day due dates, and test overdue fine formulas in real time.
+                </p>
+            </div>
+
+            <div class="row g-4 align-items-stretch">
+                <!-- Left: Interactive Inputs -->
+                <div class="col-md-6">
+                    <div class="calc-card h-100 d-flex flex-direction-column">
+                        <h5 class="fw-bold text-dark mb-4">
+                            <i class="bi bi-sliders text-primary me-2"></i> Simulation Parameters
+                        </h5>
+
+                        <div class="mb-3">
+                            <label for="toolIssueDate" class="form-label fw-bold text-dark small">
+                                1. Book Issue Date
+                            </label>
+                            <input type="date" class="form-control" id="toolIssueDate" value="{{ today|date:'Y-m-d' }}">
+                            <div class="form-text">The date the borrower checks out the book.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="toolLoanDuration" class="form-label fw-bold text-dark small">
+                                2. Loan Duration (Days)
+                            </label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="toolLoanDuration" value="{{ loan_days }}" min="1" max="90">
+                                <span class="input-group-text bg-light text-muted">Days (Standard: 14)</span>
+                            </div>
+                            <div class="form-text">Default library circulation cycle.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="toolReturnDate" class="form-label fw-bold text-dark small">
+                                3. Actual / Simulated Return Date
+                            </label>
+                            <input type="date" class="form-control" id="toolReturnDate" value="{{ today|date:'Y-m-d' }}">
+                            <div class="form-text">Simulate on-time or overdue return dates.</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="toolDailyRate" class="form-label fw-bold text-dark small">
+                                4. Daily Overdue Fine Rate ($)
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">$</span>
+                                <input type="number" class="form-control" id="toolDailyRate" value="{{ daily_rate }}" step="0.25" min="0">
+                                <span class="input-group-text bg-light text-muted">per day</span>
+                            </div>
+                        </div>
+
+                        <!-- Quick Test Presets -->
+                        <div class="mt-auto pt-3 border-top">
+                            <label class="form-label fw-bold text-muted small mb-2">Quick Test Scenarios:</label>
+                            <div class="d-flex flex-wrap gap-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" onclick="setPreset(0)">
+                                    Return Today
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" onclick="setPreset(14)">
+                                    Due Date (On Time)
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill" onclick="setPreset(19)">
+                                    +5 Days Overdue ($5)
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill" onclick="setPreset(24)">
+                                    +10 Days Overdue ($10)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Live Results Display -->
+                <div class="col-md-6">
+                    <div class="calc-card h-100 bg-light d-flex flex-column justify-content-between">
+                        <div>
+                            <h5 class="fw-bold text-dark mb-4">
+                                <i class="bi bi-check-all text-success me-2"></i> Computed Circulation Results
+                            </h5>
+
+                            <!-- Big Fine Display Box -->
+                            <div class="calc-display mb-4">
+                                <span class="text-white-50 small text-uppercase fw-bold">Total Overdue Fine</span>
+                                <div class="calc-fine-number text-white my-1" id="toolResultFine">
+                                    $0.00
+                                </div>
+                                <div id="toolResultStatus" class="mt-2">
+                                    <span class="badge bg-success fs-6 py-2 px-3">
+                                        <i class="bi bi-check-circle me-1"></i> On Time ($0.00 fine)
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Detailed Stats Breakdown -->
+                            <div class="bg-white rounded-3 p-3 border mb-3">
+                                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                                    <span class="text-muted small">Computed Due Date:</span>
+                                    <span class="fw-bold text-dark" id="toolResultDueDate">--</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                                    <span class="text-muted small">Overdue Grace Elapsed:</span>
+                                    <span class="fw-bold text-dark" id="toolResultOverdueDays">0 day(s)</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center py-2">
+                                    <span class="text-muted small">Fine Calculation Rule:</span>
+                                    <span class="fw-bold text-primary font-monospace small">Days Overdue × Daily Rate</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Policy Info Box -->
+                        <div class="p-3 bg-white rounded-3 border">
+                            <h6 class="fw-bold text-dark mb-1 small">
+                                <i class="bi bi-info-circle text-primary me-1"></i> Library Policy Reference
+                            </h6>
+                            <p class="small text-muted mb-0">
+                                If a book is returned on or before its calculated due date, the fine is $0.00. For each calendar day past the due date, the daily penalty rate is automatically assessed during return.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function setPreset(daysOffsetFromIssue) {
+    const issueInput = document.getElementById('toolIssueDate');
+    const returnInput = document.getElementById('toolReturnDate');
+    if (!issueInput || !returnInput) return;
+
+    const baseDate = new Date(issueInput.value + 'T00:00:00');
+    if (isNaN(baseDate.getTime())) return;
+
+    const targetDate = new Date(baseDate);
+    targetDate.setDate(targetDate.getDate() + daysOffsetFromIssue);
+
+    const yyyy = targetDate.getFullYear();
+    const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(targetDate.getDate()).padStart(2, '0');
+
+    returnInput.value = `${yyyy}-${mm}-${dd}`;
+    returnInput.dispatchEvent(new Event('input'));
+}
+</script>
+{% endblock %}

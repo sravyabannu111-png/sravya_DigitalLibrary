@@ -1,0 +1,145 @@
+{% extends 'library/base.html' %}
+{% load static %}
+
+{% block title %}Return Book • {{ record.book.title }} • LibreFlow{% endblock %}
+
+{% block content %}
+<div class="container-xl py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <div>
+                    <h2 class="fw-bold text-dark mb-1">
+                        <i class="bi bi-box-arrow-in-left text-primary me-2"></i> Book Return Workflow
+                    </h2>
+                    <p class="text-muted mb-0">
+                        Process book return, verify loan timeline, and calculate overdue fines.
+                    </p>
+                </div>
+                <a href="{% url 'member_dashboard' record.member.pk %}" class="btn btn-outline-custom btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+                </a>
+            </div>
+
+            <!-- Circulation Record Summary Card -->
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+                <div class="card-body p-4">
+                    <div class="d-flex flex-column flex-md-row gap-4 align-items-center">
+                        <!-- Book Cover Thumbnail -->
+                        <div style="width: 110px; height: 150px; flex-shrink: 0; background: #1e293b; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                            {% if record.book.cover_url %}
+                            <img src="{{ record.book.cover_url }}" alt="{{ record.book.title }}" class="w-100 h-100 object-fit-cover" onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\'bi bi-book fs-1 text-white\'></i>';">
+                            {% else %}
+                            <i class="bi bi-book fs-1 text-white"></i>
+                            {% endif %}
+                        </div>
+
+                        <!-- Loan Info Details -->
+                        <div class="flex-grow-1">
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill mb-2">
+                                {{ record.book.genre }}
+                            </span>
+                            <h4 class="fw-bold text-dark mb-1">{{ record.book.title }}</h4>
+                            <p class="text-muted mb-3">
+                                Borrowed by <strong class="text-dark">{{ record.member.name }}</strong> ({{ record.member.member_id }})
+                            </p>
+
+                            <div class="row g-2 text-center text-md-start">
+                                <div class="col-6 col-md-4">
+                                    <div class="p-2 bg-light rounded-3">
+                                        <div class="small text-muted">Issue Date</div>
+                                        <div class="fw-bold text-dark">{{ record.issue_date|date:"M d, Y" }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-4">
+                                    <div class="p-2 bg-light rounded-3">
+                                        <div class="small text-muted">Due Date</div>
+                                        <div class="fw-bold text-dark">{{ record.due_date|date:"M d, Y" }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <div class="p-2 bg-light rounded-3">
+                                        <div class="small text-muted">Status</div>
+                                        <div id="fineStatusBadge" class="badge {% if record.is_overdue %}bg-danger{% else %}bg-success{% endif %} p-1 px-2">
+                                            {% if record.is_overdue %}
+                                            Overdue ({{ record.days_overdue }}d)
+                                            {% else %}
+                                            On Time
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Return & Fine Calculation Card -->
+            <div class="calc-card mb-4">
+                <h5 class="fw-bold text-dark mb-3">
+                    <i class="bi bi-calculator text-primary me-2"></i> Overdue Fine Assessment
+                </h5>
+
+                <!-- Live Fine Breakdown -->
+                <div class="calc-display mb-4">
+                    <div class="row align-items-center g-3">
+                        <div class="col-md-7">
+                            <span class="text-white-50 small text-uppercase fw-bold letter-spacing">Calculated Overdue Fine</span>
+                            <div class="calc-fine-number text-white" id="calcFineAmountDisplay">
+                                ${{ projected_fine|floatformat:2 }}
+                            </div>
+                            <div class="small text-white-50">
+                                Policy: ${{ fine_rate }} per overdue day
+                            </div>
+                        </div>
+                        <div class="col-md-5 text-md-end">
+                            <div class="p-3 bg-white bg-opacity-10 rounded-3">
+                                <div class="small text-white-50">Days Overdue</div>
+                                <div class="h3 fw-bold text-warning mb-0" id="calcDaysOverdueDisplay">
+                                    {{ days_overdue }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hidden inputs for JS calculator -->
+                <input type="hidden" id="recordDueDateVal" value="{{ record.due_date|date:'Y-m-d' }}">
+                <input type="hidden" id="fineRateVal" value="{{ fine_rate }}">
+
+                <form method="post" id="returnBookForm">
+                    {% csrf_token %}
+
+                    <div class="mb-4">
+                        <label for="returnDateInput" class="form-label fw-bold text-dark">
+                            Actual Return Date
+                        </label>
+                        {{ form.return_date }}
+                        <div class="form-text">
+                            Change date to simulate return or record an earlier/later check-in. The fine updates dynamically.
+                        </div>
+                    </div>
+
+                    <div class="form-check mb-4 p-3 bg-light rounded-3 border">
+                        <input class="form-check-input ms-0 me-2" type="checkbox" name="confirm_fine" id="confirmFineCheckbox" checked required>
+                        <label class="form-check-label fw-semibold text-dark" for="confirmFineCheckbox">
+                            I verify that this book has been received into inventory and fine has been confirmed.
+                        </label>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{% url 'member_dashboard' record.member.pk %}" class="btn btn-outline-custom">
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary-gradient px-4 py-2">
+                            <i class="bi bi-check2-circle me-1"></i> Complete Return & Restock (+1 Copy)
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
